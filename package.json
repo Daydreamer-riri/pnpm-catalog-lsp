@@ -1,0 +1,68 @@
+{
+  "name": "pnpm-catalog-lsp",
+  "version": "0.0.1",
+  "private": true,
+  "packageManager": "pnpm@10.18.3",
+  "description": "Show inlay version and go-to-defintion for PNPM/Yarn/Bun catalogs",
+  "author": "Riri <Daydreamerriri@outlook.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/Daydreamer-riri/pnpm-catalog-lsp#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Daydreamer-riri/pnpm-catalog-lsp"
+  },
+  "bugs": {
+    "url": "https://github.com/Daydreamer-riri/pnpm-catalog-lsp/issues"
+  },
+  "keywords": [
+    "language-server",
+    "pnpm",
+    "pnpm-catalog"
+  ],
+  "categories": [
+    "Other"
+  ],
+  "bin": {
+    "pnpm-catalog-lsp": "./bin/server.js"
+  },
+  "icon": "res/icon.png",
+  "files": [
+    "LICENSE.md",
+    "bin/*",
+    "dist/*",
+    "res/*"
+  ],
+  "scripts": {
+    "build": "tsup --minify",
+    "prepublishOnly": "npm run build",
+    "dev": "tsup --watch",
+    "lint": "eslint .",
+    "test": "vitest",
+    "typecheck": "tsc --noEmit",
+    "release": "bumpp"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.4",
+    "@babel/preset-typescript": "^7.27.1",
+    "@babel/traverse": "^7.28.4",
+    "@babel/types": "^7.28.4",
+    "@ririd/eslint-config": "^2.0.0",
+    "@types/babel__core": "^7.20.5",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.8.0",
+    "bumpp": "^10.3.1",
+    "eslint": "^9.37.0",
+    "eslint-plugin-format": "^1.0.2",
+    "find-up": "^8.0.0",
+    "js-yaml": "^4.1.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
+    "vitest": "^3.2.4",
+    "vscode-languageclient": "^9.0.1",
+    "vscode-languageserver": "^9.0.1",
+    "vscode-languageserver-textdocument": "^1.0.12",
+    "vscode-uri": "^3.1.0",
+    "yaml-eslint-parser": "^1.3.0"
+  }
+}
