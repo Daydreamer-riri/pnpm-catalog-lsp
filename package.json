@@ -9,7 +9,7 @@
   "homepage": "https://github.com/Daydreamer-riri/pnpm-catalog-lsp#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Daydreamer-riri/pnpm-catalog-lsp"
+    "url": "git+https://github.com/Daydreamer-riri/pnpm-catalog-lsp.git"
   },
   "bugs": {
     "url": "https://github.com/Daydreamer-riri/pnpm-catalog-lsp/issues"
@@ -23,7 +23,7 @@
     "Other"
   ],
   "bin": {
-    "pnpm-catalog-lsp": "./bin/server.js"
+    "pnpm-catalog-lsp": "bin/server.js"
   },
   "icon": "res/icon.png",
   "files": [
