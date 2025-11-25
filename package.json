@@ -1,7 +1,6 @@
 {
   "name": "pnpm-catalog-lsp",
   "version": "0.0.1",
-  "private": true,
   "packageManager": "pnpm@10.18.3",
   "description": "Show inlay version and go-to-definition for PNPM/Yarn/Bun catalogs",
   "author": "Riri <Daydreamerriri@outlook.com>",
