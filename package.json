@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@10.18.3",
-  "description": "Show inlay version and go-to-defintion for PNPM/Yarn/Bun catalogs",
+  "description": "Show inlay version and go-to-definition for PNPM/Yarn/Bun catalogs",
   "author": "Riri <Daydreamerriri@outlook.com>",
   "license": "MIT",
   "homepage": "https://github.com/Daydreamer-riri/pnpm-catalog-lsp#readme",

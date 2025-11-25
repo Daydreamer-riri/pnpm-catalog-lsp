@@ -5,7 +5,7 @@
 <h1 align="center">Catalog Lens</h1>
 
 <p align="center">
-Show versions inline for <a href="https://pnpm.io/catalogs" target="_blank">pnpm</a> · <a href="https://yarnpkg.com/features/catalogs" target="_blank">yarn</a> · <a href="https://bun.sh/docs/install/catalogs" target="_blank">bun</a> <code>catalog:</code> fields.<br>
+Show versions inline and go-to-definition for <a href="https://pnpm.io/catalogs" target="_blank">pnpm</a> · <a href="https://yarnpkg.com/features/catalogs" target="_blank">yarn</a> · <a href="https://bun.sh/docs/install/catalogs" target="_blank">bun</a> <code>catalog:</code> fields.<br>
 </p>
 
 ## Credits
