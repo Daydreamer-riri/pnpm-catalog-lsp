@@ -140,7 +140,7 @@ export function createServer() {
           // paddingLeft: true
           extraData: {
             catalog,
-            color: getCatalogColor(catalog === 'default' ? 'default' : `${catalog}-${`catalog-lens`}`),
+            color: getCatalogColor(catalog === 'default' ? 'default' : `${catalog}-${`lens`}`),
           },
         })
       }
