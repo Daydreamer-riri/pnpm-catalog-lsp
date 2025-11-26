@@ -179,6 +179,7 @@ export class WorkspaceManager {
     const disposable = this.documents.onDidChangeContent(e => {
       if (e.document.uri === doc.uri) {
         this.dataMap.delete(doc.uri)
+        this.positionDataMap.delete(doc.uri)
         setTimeout(() => {
           this.connection.languages.inlayHint.refresh()
         }, 300)
