@@ -9,7 +9,7 @@ import { parseSync, traverse } from '@babel/core'
 import preset from '@babel/preset-typescript'
 import { findUp } from 'find-up'
 import YAML from 'js-yaml'
-import { InlayHintRefreshRequest, Range } from 'vscode-languageserver'
+import { Range } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 import { parseYAML } from 'yaml-eslint-parser'
@@ -112,7 +112,7 @@ export class WorkspaceManager {
 
     try {
       const content = await fs.readFile(path, 'utf-8')
-      return TextDocument.create(URI.file(path).toString(), 'yaml', 1, content)
+      return TextDocument.create(uri, 'yaml', 1, content)
     }
     catch {
       logger.error(`Failed to read workspace file: ${path}`)
@@ -179,10 +179,9 @@ export class WorkspaceManager {
     const disposable = this.documents.onDidChangeContent(e => {
       if (e.document.uri === doc.uri) {
         this.dataMap.delete(doc.uri)
-        this.connection?.sendRequest(InlayHintRefreshRequest.type).then(() => {
-          logger.error(`InlayHintRefreshRequest sent for workspace: ${doc.uri}`)
-        })
-        this.connection.languages.inlayHint.refresh()
+        setTimeout(() => {
+          this.connection.languages.inlayHint.refresh()
+        }, 300)
         disposable.dispose()
       }
     })
