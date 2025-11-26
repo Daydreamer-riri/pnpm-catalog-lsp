@@ -21,7 +21,7 @@ import {
 import { URI } from 'vscode-uri'
 import { catalogPrefix } from '../shared/constants'
 import { WorkspaceManager } from './data'
-import { getNodeRange, logger } from './utils'
+import { getCatalogColor, getNodeRange, logger } from './utils'
 
 export function createServer() {
   const connection = createConnection(ProposedFeatures.all)
@@ -127,7 +127,7 @@ export function createServer() {
 
     const props = getCatalogProperties(parsed.ast)
     logger.error('InlayHint request for:', doc.uri, props.length, props)
-    const hints: InlayHint[] = []
+    const hints: (InlayHint & { extraData: { catalog: string, color: string | undefined } })[] = []
 
     for (const { node, catalog } of props) {
       const result = await workspaceManager.resolveCatalog(doc.uri, (node.key as StringLiteral).value, catalog)
@@ -137,7 +137,11 @@ export function createServer() {
           position: range.end,
           label: result.version,
           kind: InlayHintKind.Type,
-        // paddingLeft: true
+          // paddingLeft: true
+          extraData: {
+            catalog,
+            color: getCatalogColor(catalog),
+          },
         })
       }
     }
