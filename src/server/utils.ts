@@ -27,7 +27,7 @@ export function getCatalogColor(name: string) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash)
   const hue = hash % 360
   const saturation = 35
-  const lightness = 55
+  const lightness = 65
   const result = hslToHex(hue, saturation, lightness)
   catalogColors.set(name, result)
   return result
