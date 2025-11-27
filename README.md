@@ -48,24 +48,19 @@ pnpm add -g pnpm-catalog-lsp
 
 Use [catalog-lens.nvim](https://github.com/Daydreamer-riri/catalog-lens.nvim) for easy integration. It also provides additional highlighting capabilities.
 
-If you prefer manual configuration with `nvim-lspconfig`:
+If you prefer manual configuration using `vim.lsp`:
 
 ```lua
-local lspconfig = require('lspconfig')
-local configs = require('lspconfig.configs')
+vim.lsp.config["catalog_ls"] = {
+  cmd = { 'pnpm-catalog-lsp', '--stdio' },
+  filetypes = { "json", "yaml" },
+  root_markers = { { "pnpm-workspace.yaml" }, ".git" },
+  handlers = {
+    -- You can customize hint rendering if needed
+  },
+}
 
-if not configs.pnpm_catalog then
-  configs.pnpm_catalog = {
-    default_config = {
-      cmd = { 'pnpm-catalog-lsp', '--stdio' },
-      filetypes = { 'json', 'jsonc' },
-      root_dir = lspconfig.util.root_pattern('package.json', 'pnpm-workspace.yaml', 'pnpm-lock.yaml'),
-      settings = {},
-    },
-  }
-end
-
-lspconfig.pnpm_catalog.setup {}
+vim.lsp.enable("catalog_ls")
 ```
 
 ### VS Code
