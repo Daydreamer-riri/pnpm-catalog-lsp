@@ -1,14 +1,11 @@
-import type { ParseResult } from '@babel/core'
-import type { ObjectProperty, StringLiteral } from '@babel/types'
+import type { Node } from 'jsonc-parser'
 import type {
   InitializeParams,
   InitializeResult,
   InlayHint,
   Range,
 } from 'vscode-languageserver/node'
-import { parseSync, traverse } from '@babel/core'
-// @ts-expect-error missing types
-import preset from '@babel/preset-typescript'
+import { parseTree } from 'jsonc-parser'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import {
   createConnection,
@@ -18,10 +15,9 @@ import {
   TextDocuments,
   TextDocumentSyncKind,
 } from 'vscode-languageserver/node'
-import { URI } from 'vscode-uri'
 import { catalogPrefix } from '../shared/constants'
 import { WorkspaceManager } from './data'
-import { getCatalogColor, getNodeRange } from './utils'
+import { getCatalogColor, getNodeRange, logger } from './utils'
 
 export function createServer() {
   const connection = createConnection(ProposedFeatures.all)
@@ -75,44 +71,34 @@ export function createServer() {
     }
   })
 
-  function parsePackageJson(text: string, uri: string) {
-    const prefix = 'const x = '
-    const offset = -prefix.length
-    const combined = prefix + text
+  function getCatalogProperties(root: Node) {
+    const items: { key: string, valueNode: Node, catalog: string }[] = []
 
-    try {
-      const ast = parseSync(combined, {
-        filename: URI.parse(uri).fsPath,
-        presets: [preset],
-        babelrc: false,
-      })
-      return { ast, offset }
-    }
-    catch {
-      return null
-    }
-  }
+    function traverse(node: Node) {
+      if (node.type === 'property' && node.children && node.children.length === 2) {
+        const keyNode = node.children[0]
+        const valueNode = node.children[1]
 
-  function getCatalogProperties(ast: ParseResult) {
-    const items: { node: ObjectProperty, catalog: string }[] = []
-    traverse(ast, {
-      ObjectProperty(path) {
-        const key = path.node.key
-        const value = path.node.value
-
-        if (key.type !== 'StringLiteral' || value.type !== 'StringLiteral') {
-          return
+        if (keyNode.type === 'string' && valueNode.type === 'string') {
+          const value = valueNode.value
+          if (typeof value === 'string' && value.startsWith(catalogPrefix)) {
+            items.push({
+              key: keyNode.value,
+              valueNode,
+              catalog: value.slice(catalogPrefix.length).trim() || 'default',
+            })
+          }
         }
+      }
 
-        if (!value.value.startsWith(catalogPrefix))
-          return
+      if (node.children) {
+        for (const child of node.children) {
+          traverse(child)
+        }
+      }
+    }
 
-        items.push({
-          node: path.node,
-          catalog: value.value.slice(catalogPrefix.length).trim() || 'default',
-        })
-      },
-    })
+    traverse(root)
     return items
   }
 
@@ -121,17 +107,18 @@ export function createServer() {
     if (!doc || !doc.uri.endsWith('package.json'))
       return null
 
-    const parsed = parsePackageJson(doc.getText(), doc.uri)
-    if (!parsed || !parsed.ast)
+    const root = parseTree(doc.getText())
+    // logger.error(root)
+    if (!root)
       return null
 
-    const props = getCatalogProperties(parsed.ast)
+    const props = getCatalogProperties(root)
     const hints: (InlayHint & { extraData: { catalog: string, color: string | undefined } })[] = []
 
-    for (const { node, catalog } of props) {
-      const result = await workspaceManager.resolveCatalog(doc.uri, (node.key as StringLiteral).value, catalog)
+    for (const { key, valueNode, catalog } of props) {
+      const result = await workspaceManager.resolveCatalog(doc.uri, key, catalog)
       if (result && result.version) {
-        const range = getNodeRange(doc, node, parsed.offset)
+        const range = getNodeRange(doc, valueNode)
         hints.push({
           position: range.end,
           label: result.version,
@@ -152,16 +139,17 @@ export function createServer() {
     if (!doc || !doc.uri.endsWith('package.json'))
       return null
 
-    const parsed = parsePackageJson(doc.getText(), doc.uri)
-    if (!parsed || !parsed.ast)
+    const root = parseTree(doc.getText())
+    if (!root)
       return null
 
-    const props = getCatalogProperties(parsed.ast)
+    const props = getCatalogProperties(root)
 
-    for (const { node, catalog } of props) {
-      const range = getNodeRange(doc, node, parsed.offset)
+    for (const { key, valueNode, catalog } of props) {
+      const range = getNodeRange(doc, valueNode)
       if (isPositionInRange(params.position, range)) {
-        const result = await workspaceManager.resolveCatalog(doc.uri, (node.key as StringLiteral).value, catalog)
+        const result = await workspaceManager.resolveCatalog(doc.uri, key, catalog)
+        logger.error(result)
         if (result) {
           return {
             contents: {
@@ -180,16 +168,16 @@ export function createServer() {
     if (!doc || !doc.uri.endsWith('package.json'))
       return null
 
-    const parsed = parsePackageJson(doc.getText(), doc.uri)
-    if (!parsed || !parsed.ast)
+    const root = parseTree(doc.getText())
+    if (!root)
       return null
 
-    const props = getCatalogProperties(parsed.ast)
+    const props = getCatalogProperties(root)
 
-    for (const { node, catalog } of props) {
-      const range = getNodeRange(doc, node, parsed.offset)
+    for (const { key, valueNode, catalog } of props) {
+      const range = getNodeRange(doc, valueNode)
       if (isPositionInRange(params.position, range)) {
-        const result = await workspaceManager.resolveCatalog(doc.uri, (node.key as StringLiteral).value, catalog)
+        const result = await workspaceManager.resolveCatalog(doc.uri, key, catalog)
         if (result && result.definition) {
           return result.definition
         }

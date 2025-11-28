@@ -1,14 +1,12 @@
-import type { ObjectMethod, ObjectProperty, SpreadElement } from '@babel/types'
+import type { Node } from 'jsonc-parser'
 import type { _Connection, Location, TextDocuments } from 'vscode-languageserver'
 import type { AST } from 'yaml-eslint-parser'
 import type { PackageManager } from '../shared/types'
 import * as fs from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { parseSync, traverse } from '@babel/core'
-// @ts-expect-error missing types
-import preset from '@babel/preset-typescript'
 import { findUp } from 'find-up'
 import YAML from 'js-yaml'
+import { parseTree } from 'jsonc-parser'
 import { Range } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
@@ -278,71 +276,55 @@ export class WorkspaceManager {
       catalogs: {},
     }
 
-    const code = doc.getText()
-    const prefix = 'const x = '
-    const offset = -prefix.length
-    const combined = prefix + code
+    const root = parseTree(doc.getText())
+    if (!root || root.type !== 'object' || !root.children)
+      return data
 
-    try {
-      const ast = parseSync(combined, {
-        filename: URI.parse(doc.uri).fsPath,
-        presets: [preset],
-        babelrc: false,
-      })
-      if (!ast)
-        return
+    const setActualPosition = (properties: Node[], data: Record<string, [AST.Position, AST.Position]>) => {
+      properties.forEach(prop => {
+        if (prop.type === 'property' && prop.children) {
+          const keyNode = prop.children[0]
+          const valueNode = prop.children[1]
+          if (keyNode && valueNode && keyNode.type === 'string' && valueNode.type === 'string') {
+            const packageName = keyNode.value
 
-      const setActualPosition = (properties: (ObjectMethod | ObjectProperty | SpreadElement)[], data: Record<string, [AST.Position, AST.Position]>, code: string) => {
-        properties.forEach(prop => {
-          if (prop.type === 'ObjectProperty' && prop.key.type === 'StringLiteral' && prop.value.type === 'StringLiteral') {
-            const packageName = prop.key.value
-
-            const startPos = prop.value.start ? prop.value.start + offset : undefined
-            const endPos = prop.value.end ? prop.value.end + offset : undefined
-
-            const beforeStart = code.substring(0, startPos)
-            const beforeEnd = code.substring(0, endPos)
-
-            const startLine = beforeStart.split('\n').length
-            const startColumn = beforeStart.split('\n').pop()!.length
-            const endLine = beforeEnd.split('\n').length
-            const endColumn = beforeEnd.split('\n').pop()!.length
+            const startPos = doc.positionAt(valueNode.offset + 1)
+            const endPos = doc.positionAt(valueNode.offset + valueNode.length - 1)
 
             data[packageName] = [
-              { line: startLine, column: startColumn + 1 },
-              { line: endLine, column: endColumn - 1 },
+              { line: startPos.line + 1, column: startPos.character },
+              { line: endPos.line + 1, column: endPos.character },
             ]
           }
-        })
-      }
+        }
+      })
+    }
 
-      traverse(ast, {
-        ObjectProperty(path) {
-          const key = path.node.key
-          const value = path.node.value
+    try {
+      const workspacesProp = root.children.find(p => p.children?.[0].value === 'workspaces')
+      if (workspacesProp && workspacesProp.children?.[1].type === 'object') {
+        const workspacesObj = workspacesProp.children[1]
+        if (workspacesObj.children) {
+          const catalogProp = workspacesObj.children.find(p => p.children?.[0].value === 'catalog')
+          if (catalogProp && catalogProp.children?.[1].type === 'object') {
+            setActualPosition(catalogProp.children[1].children || [], data.catalog)
+          }
 
-          if (key.type === 'StringLiteral' && key.value === 'workspaces') {
-            if (value.type === 'ObjectExpression') {
-              value.properties.forEach(prop => {
-                if (prop.type === 'ObjectProperty' && prop.key.type === 'StringLiteral') {
-                  if (prop.key.value === 'catalog' && prop.value.type === 'ObjectExpression') {
-                    setActualPosition(prop.value.properties, data.catalog, code)
-                  }
-                  else if (prop.key.value === 'catalogs' && prop.value.type === 'ObjectExpression') {
-                    prop.value.properties.forEach(catalogProp => {
-                      if (catalogProp.type === 'ObjectProperty' && catalogProp.key.type === 'StringLiteral' && catalogProp.value.type === 'ObjectExpression') {
-                        const catalogName = catalogProp.key.value
-                        data.catalogs[catalogName] = {}
-                        setActualPosition(catalogProp.value.properties, data.catalogs[catalogName], code)
-                      }
-                    })
-                  }
+          const catalogsProp = workspacesObj.children.find(p => p.children?.[0].value === 'catalogs')
+          if (catalogsProp && catalogsProp.children?.[1].type === 'object') {
+            const catalogsObj = catalogsProp.children[1]
+            if (catalogsObj.children) {
+              catalogsObj.children.forEach(catalog => {
+                if (catalog.type === 'property' && catalog.children?.[1].type === 'object') {
+                  const catalogName = catalog.children[0].value
+                  data.catalogs[catalogName] = {}
+                  setActualPosition(catalog.children[1].children || [], data.catalogs[catalogName])
                 }
               })
             }
           }
-        },
-      })
+        }
+      }
     }
     catch (err: any) {
       logger.error(`readJsonWorkspacePosition error ${err.message}`)

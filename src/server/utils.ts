@@ -1,4 +1,4 @@
-import type { ObjectProperty } from '@babel/types'
+import type { Node } from 'jsonc-parser'
 import type { TextDocument } from 'vscode-languageserver-textdocument'
 import { Range } from 'vscode-languageserver'
 
@@ -9,9 +9,9 @@ export const logger = {
   warn: (...message: any) => console.warn(...message),
 }
 
-export function getNodeRange(doc: TextDocument, node: ObjectProperty, offset: number) {
-  const start = node.value.start! + offset + 1
-  const end = node.value.end! + offset - 1
+export function getNodeRange(doc: TextDocument, node: Node) {
+  const start = node.offset + 1
+  const end = node.offset + node.length - 1
   return Range.create(doc.positionAt(start), doc.positionAt(end))
 }
 
