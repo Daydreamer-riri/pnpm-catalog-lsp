@@ -76,3 +76,8 @@ function hslToRgb(h: number, s: number, l: number) {
     Math.max(0, Math.round(b * 255)),
   ]
 }
+
+// for neovim because it will not merge hover
+export function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}

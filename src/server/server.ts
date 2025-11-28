@@ -17,7 +17,7 @@ import {
 } from 'vscode-languageserver/node'
 import { catalogPrefix } from '../shared/constants'
 import { WorkspaceManager } from './data'
-import { getCatalogColor, getNodeRange, logger } from './utils'
+import { getCatalogColor, getNodeRange, sleep } from './utils'
 
 export function createServer() {
   const connection = createConnection(ProposedFeatures.all)
@@ -149,8 +149,8 @@ export function createServer() {
       const range = getNodeRange(doc, valueNode)
       if (isPositionInRange(params.position, range)) {
         const result = await workspaceManager.resolveCatalog(doc.uri, key, catalog)
-        logger.error(result)
         if (result) {
+          await sleep(20)
           return {
             contents: {
               kind: 'markdown',
